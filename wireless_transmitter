@@ -1,0 +1,87 @@
+#include <RH_ASK.h>
+#ifdef RH_HAVE_HARDWARE_SPI
+#include <SPI.h> // Not actually used but needed to compile
+#endif
+
+RH_ASK driver;
+//RH_ASK driver(2000, 4, 11, 0); // ESP8266 or ESP32: do not use pin 11 or 2
+
+//IR Code-----------------------------
+int ir3[] = {0, 8, 10, 9, 7};
+int ir2[] = {0, 5, 4, 3, 6};
+int ir1[] = {0, A2, A0, A1, A3}; //row 1 the bottom one, first one is the leftmost */
+
+//--------------------------------
+//IR Code-----------------------------
+int ir3_read[5];
+int ir2_read[5];
+int ir1_read[5];
+
+/*int ir3[] = {0, 1, 1, 0, 1};
+  int ir2[] = {0, 0, 0, 1, 0};
+  int ir1[] = {0, 1, 1, 0, 0};// */
+
+
+
+uint16_t ir; //variables to store data to
+//IR Code ENDS------------------------
+
+void setup()
+{
+#ifdef RH_HAVE_SERIAL
+  Serial.begin(9600);    // Debugging only
+#endif
+  if (!driver.init())
+#ifdef RH_HAVE_SERIAL
+    Serial.println("init failed");
+#else
+    ;
+#endif
+  //Declare IR pins-------------------------
+  for (int i = 1; i <= 4; i++) {
+    pinMode(ir1[i], INPUT);
+    pinMode(ir2[i], INPUT);
+    pinMode(ir3[i], INPUT);
+  }
+  //IR pin declaration ends-----------------*/
+}
+
+void loop()
+{
+  Check_IR_Status();
+
+  uint8_t len = sizeof(ir);
+  driver.send((uint8_t *)&ir, len);
+  driver.waitPacketSent();
+  delay(100);
+}
+
+void Check_IR_Status() {
+
+  ir = 0;
+  //read data from sensor----------
+  for (int i = 1; i <= 4; i++) {
+    ir1_read[i] = digitalRead(ir1[i]);
+    ir2_read[i] = digitalRead(ir2[i]);
+    ir3_read[i] = digitalRead(ir3[i]);
+  }
+  //-------------------------------------------------
+  //Read and Store IR Sensor Data-------
+  for (int i = 1; i <= 4; i++) {
+    ir += ir1_read[i];
+    ir = ir << 1;
+    Serial.println(ir, BIN);
+  }
+  for (int i = 1; i <= 4; i++) {
+    ir += ir2_read[i];
+    ir = ir << 1;
+    Serial.println(ir, BIN);
+  }
+  for (int i = 1; i <= 4; i++) {
+    ir += ir3_read[i];
+    ir = ir << 1;
+    Serial.println(ir, BIN);
+  }
+  ir = ir >> 1;
+  Serial.println(ir, BIN);
+};
